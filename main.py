@@ -137,6 +137,7 @@ def main():
             image_url = image_generation()
             if image_url:
                 speak(f"The image has been created. You can view it here: {image_url}")
+                webbrowser.open(image_url)
 
         elif user_input == "shut down the computer":
             pc_shut_down()
