@@ -16,6 +16,7 @@ from mail_report import open_webmail
 import webbrowser
 from notification_sms import send_sms_via_vonage, create_vonage_client, schedule_sms, main_notification
 import sensetive_info
+import todolist
 
 # Global flag for stopping vision thread
 stop_vision = threading.Event()
@@ -49,7 +50,9 @@ def help():
         "open youtube - to open YouTube",
         "open chrome - to open Chrome",
         "email report - to open the webmail",
+        "do list - to show the todo list(show-add-check-clear-exit)",
         "exit - bye - quit - to exit the program"
+        "note that you can also type commands in the format /command_name"
     ]
     for command in commands:
         speak(command)
@@ -91,6 +94,113 @@ def pc_shut_down():
     else:
         speak("Shutdown canceled.")
 
+def process_command(user_input):
+    global stop_vision
+    vision_thread = None
+    
+    if user_input in ["quit", "exit", "bye"]:
+        stop_vision.set()
+        if vision_thread is not None:
+            vision_thread.join()
+        return True
+
+    elif user_input == "open spotify":
+        speak("Welcome to Spotify. What song would you like me to play?")
+        song_name = listen()
+        if song_name != "None":
+            response = search_and_play_song(song_name)
+            speak(response)
+        else:
+            speak("Sorry, I didn't catch that. Please try again.")
+
+    elif user_input == "activate face detection":
+        vision_thread = vision_manager(detect_faces)
+
+    elif user_input == "weather report":
+        speak(get_weather())
+
+    elif user_input == "activate emotion detection":
+        vision_thread = vision_manager(detect_emotions)
+
+    elif user_input == "activate color detection":
+        vision_thread = vision_manager(detect_colors)
+        speak("Color detection activated.")
+
+    elif user_input == "activate video detection":
+        vision_thread = vision_manager(video)
+        speak("Video detection activated.")
+
+    elif user_input == "activate image generation":
+        speak("Image generation activated.")
+        image_url = image_generation()
+        if image_url:
+            speak(f"The image has been created. You can view it here")
+            webbrowser.open(image_url)
+
+    elif user_input == "shut down the computer":
+        pc_shut_down()
+
+    elif user_input == "give me pc report":
+        pc_report()
+
+    elif user_input == "terminate current function":
+        speak("Terminating current function.")
+        listen_for_termination()
+
+    elif user_input == "news":
+        get_daily_news()
+
+    elif user_input == "activate game mode":
+        speak("Game mode activated.")
+        game_mode.run()
+
+    elif user_input == "google search":
+        speak("What would you like me to search for?")
+        search_query = listen()
+        if search_query != "None":
+            search_google(search_query)
+            speak("Here are the results of your search:")
+
+    elif user_input == "activate qr reader":
+        speak("QR reader activated.")
+        reader()
+
+    elif user_input == "open github":
+        speak("Opening GitHub repository...")
+        webbrowser.open(sensetive_info.GITHUB_LINK)
+
+    elif user_input == "open youtube":
+        speak("Opening YouTube...")
+        webbrowser.open("https://www.youtube.com/")
+
+    elif user_input == "open chrome":
+        speak("Opening Chrome...")
+        webbrowser.open("https://www.google.com/chrome/")
+    
+    elif user_input in ["email report", "webmail report", "mail report"]:
+        speak("Here is your daily email report:")
+        open_webmail()
+    
+    elif user_input == "notifications":
+        speak("Notifications activated.")
+        main_notification()
+
+    elif user_input == "do list" or user_input == "to do list":
+        speak("Here are today's tasks:")
+        todolist.run()
+        
+    elif user_input == "help":
+        help()
+
+    elif user_input == "voice settings":
+        main_voice()
+    else:
+        # Fall back to general chat response using chat_gpt
+        response = chat_gpt(user_input)
+        speak(response)
+    
+    return False
+
 def main():
     global stop_vision
     vision_thread = None
@@ -98,104 +208,16 @@ def main():
     
     speak(f"Hello Boss. How can I assist you today?")
     while True:
-        print("Say something...")
-        user_input = listen().lower()
-        if user_input in ["quit", "exit", "bye"]:
-            stop_vision.set()
-            if vision_thread is not None:
-                vision_thread.join()
-            break
-
-        elif user_input == "open spotify":
-            speak("Welcome to Spotify. What song would you like me to play?")
-            song_name = listen()
-            if song_name != "None":
-                response = search_and_play_song(song_name)
-                speak(response)
-            else:
-                speak("Sorry, I didn't catch that. Please try again.")
-
-        elif user_input == "activate face detection":
-            vision_thread = vision_manager(detect_faces)
-
-        elif user_input == "weather report":
-            speak(get_weather())
-
-        elif user_input == "activate emotion detection":
-            vision_thread = vision_manager(detect_emotions)
-
-        elif user_input == "activate color detection":
-            vision_thread = vision_manager(detect_colors)
-            speak("Color detection activated.")
-
-        elif user_input == "activate video detection":
-            vision_thread = vision_manager(video)
-            speak("Video detection activated.")
-
-        elif user_input == "activate image generation":
-            speak("Image generation activated.")
-            image_url = image_generation()
-            if image_url:
-                speak(f"The image has been created. You can view it here: {image_url}")
-                webbrowser.open(image_url)
-
-        elif user_input == "shut down the computer":
-            pc_shut_down()
-
-        elif user_input == "give me pc report":
-            pc_report()
-
-        elif user_input == "terminate current function":
-            speak("Terminating current function.")
-            listen_for_termination()
-
-        elif user_input == "news":
-            get_daily_news()
-
-        elif user_input == "activate game mode":
-            speak("Game mode activated.")
-            game_mode.run()
-
-        elif user_input == "google search":
-            speak("What would you like me to search for?")
-            search_query = listen()
-            if search_query != "None":
-                search_google(search_query)
-                speak("Here are the results of your search:")
-
-        elif user_input == "activate qr reader":
-            speak("QR reader activated.")
-            reader()
-
-        elif user_input == "open github":
-            speak("Opening GitHub repository...")
-            webbrowser.open(sensetive_info.GITHUB_LINK)
-
-        elif user_input == "open youtube":
-            speak("Opening YouTube...")
-            webbrowser.open("https://www.youtube.com/")
-
-        elif user_input == "open chrome":
-            speak("Opening Chrome...")
-            webbrowser.open("https://www.google.com/chrome/")
+        print("Say something or type a command...")
+        user_input = input().strip()
         
-        elif user_input in ["email report", "webmail report", "mail report"]:
-            speak("Here is your daily email report:")
-            open_webmail()
-        
-        elif user_input == "notifications":
-            speak("Notifications activated.")
-            main_notification()
-            
-        elif user_input == "help":
-            help()
-
-        elif user_input == "voice settings":
-            main_voice()
+        if user_input.startswith("/"):
+            user_input = user_input[1:]
         else:
-            # Fall back to general chat response using chat_gpt
-            response = chat_gpt(user_input)
-            speak(response)
+            user_input = listen().lower()
+
+        if process_command(user_input):
+            break
 
 if __name__ == "__main__":
     main()
