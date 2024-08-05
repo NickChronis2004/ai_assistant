@@ -18,12 +18,7 @@ def listen():
             print(f"Could not understand your audio, please try again! {str(e)}")
             return "None"
 
-def search_google():
-    query = listen()
-    if query == "None":
-        print("No valid input detected.")
-        return
-
+def search_google(query):
     print(f"Searching for: {query}")
     data = search(query, start=0, stop=10, tld='com', lang='en', verify_ssl=False)
 
@@ -31,4 +26,6 @@ def search_google():
         print(i)
 
 if __name__ == "__main__":
-    search_google()
+    query = listen()
+    if query != "None":
+        search_google(query)

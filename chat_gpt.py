@@ -18,9 +18,13 @@ def chat_gpt(prompt):
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are a helpful AI assistant named JARVIS."},
+                {"role": "system", "content": "You are JARVIS, Tony Stark's AI assistant from the Iron Man movies. You are highly intelligent, articulate, and speak with a calm, formal British accent. You respond with wit and precision, always providing helpful and efficient assistance."},
                 {"role": "user", "content": prompt}
-            ]
+            ],
+            max_tokens=150,
+            temperature=0.7,
+            n=1,
+            stop=None
         )
         message = response['choices'][0]['message']['content'].strip()
         return message

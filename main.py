@@ -25,9 +25,36 @@ stop_vision = threading.Event()
 engine = pyttsx3.init()
 recognizer = sr.Recognizer()
 
+# Define possible commands and their variations
+commands = {
+    "open_spotify": ["open spotify", "play some music", "start spotify", "play a song", "launch spotify"],
+    "weather_report": ["weather report", "what's the weather", "tell me the weather", "weather", "how's the weather"],
+    "face_detection": ["face detection", "detect faces"],
+    "emotion_detection": ["emotion detection", "detect emotions"],
+    "color_detection": ["color detection", "detect colors"],
+    "video_detection": ["video detection", "detect videos"],
+    "image_generation": ["image generation", "generate image"],
+    "shut_down": ["shut down", "shutdown"],
+    "pc_report": ["pc report", "system report"],
+    "terminate": ["terminate", "stop"],
+    "news": ["news", "latest news"],
+    "game_mode": ["game mode", "play game"],
+    "google_search": ["google search", "search google"],
+    "qr_reader": ["qr reader", "read qr"],
+    "open_github": ["open github", "github"],
+    "open_youtube": ["open youtube", "youtube"],
+    "open_chrome": ["open chrome", "chrome"],
+    "email_report": ["email report", "webmail report", "mail report"],
+    "notifications": ["notifications", "send notification"],
+    "do_list": ["do list", "to do list"],
+    "help": ["help"],
+    "voice_settings": ["voice settings", "change voice"],
+    "exit": ["exit", "bye", "quit"]
+}
+
 def help():
     speak("You can say the following commands:")
-    commands = [
+    command_list = [
         "open spotify - to open Spotify",
         "face detection - to activate face detection",
         "weather report - to get the weather report",
@@ -54,10 +81,16 @@ def help():
         "email report - to open the webmail",
         "do list - to show the todo list(show-add-check-clear-exit)",
         "exit - bye - quit - to exit the program",
-        "note that you can also type commands in the format /command_name"
     ]
-    for command in commands:
+    for command in command_list:
         speak(command)
+
+def classify_command(user_input):
+    for command, variations in commands.items():
+        for variation in variations:
+            if variation in user_input.lower():
+                return command
+    return None
 
 def vision_manager(vision_function):
     global stop_vision
@@ -100,14 +133,16 @@ def process_command(user_input):
     global stop_vision
     vision_thread = None
     
-    if user_input in ["quit", "exit", "bye"]:
+    command = classify_command(user_input)
+    
+    if command in ["quit", "exit", "bye", "you can sleep now"]:
         stop_vision.set()
         if vision_thread is not None:
             vision_thread.join()
         return True
 
-    elif user_input == "open spotify":
-        speak("Welcome to Spotify. Please type the song name or say it.")
+    elif command == "open_spotify":
+        speak("On it. Please type the song name or say it.")
         song_name = input("Type the song name: ").strip()
         if not song_name:
             song_name = listen()
@@ -116,90 +151,92 @@ def process_command(user_input):
             response = search_and_play_song(song_name)
             speak(response)
         else:
-            speak("Sorry, I didn't catch that. Please try again.")
+            speak("Sorry, I didn't catch that. Can you say it again?")
 
-    elif user_input == "face detection":
+    elif command == "face_detection":
         vision_thread = vision_manager(detect_faces)
 
-    elif user_input == "weather report":
+    elif command == "weather_report":
         speak(get_weather())
 
-    elif user_input == "emotion detection":
+    elif command == "emotion_detection":
         vision_thread = vision_manager(detect_emotions)
 
-    elif user_input == "color detection":
+    elif command == "color_detection":
         vision_thread = vision_manager(detect_colors)
         speak("Color detection activated.")
 
-    elif user_input == "video detection":
+    elif command == "video_detection":
         vision_thread = vision_manager(video)
         speak("Video detection activated.")
 
-    elif user_input == "image generation":
+    elif command == "image_generation":
         speak("Image generation activated.")
+        speak("What would you like me to generate an image for?")
         image_url = image_generation()
         if image_url:
             speak(f"The image has been created. You can view it here")
             webbrowser.open(image_url)
 
-    elif user_input == "shut down":
+    elif command == "shut_down":
         pc_shut_down()
 
-    elif user_input == "pc report":
+    elif command == "pc_report":
         pc_report()
 
-    elif user_input == "terminate":
+    elif command == "terminate":
         stop_vision.set()
         if vision_thread is not None:
             vision_thread.join()
         speak("Terminating current function.")
 
-    elif user_input == "news":
+    elif command == "news":
+        speak("Here is the latest news:")
         get_daily_news()
 
-    elif user_input == "game mode":
+    elif command == "game_mode":
         speak("Game mode activated.")
         start_game() 
 
-    elif user_input == "google search":
+    elif command == "google_search":
         speak("What would you like me to search for?")
         search_query = listen()
         if search_query != "None":
             search_google(search_query)
             speak("Here are the results of your search:")
 
-    elif user_input == "qr reader":
+    elif command == "qr_reader":
         speak("QR reader activated.")
         reader()
 
-    elif user_input == "open github":
+    elif command == "open_github":
         speak("Opening GitHub repository...")
         webbrowser.open(sensetive_info.GITHUB_LINK)
 
-    elif user_input == "open youtube":
+    elif command == "open_youtube":
         speak("Opening YouTube...")
         webbrowser.open("https://www.youtube.com/")
 
-    elif user_input == "open chrome":
+    elif command == "open_chrome":
         speak("Opening Chrome...")
         webbrowser.open("https://www.google.com/chrome/")
     
-    elif user_input in ["email report", "webmail report", "mail report"]:
+    elif command in ["email_report", "webmail_report", "mail_report"]:
         speak("Here is your daily email report:")
         open_webmail()
     
-    elif user_input == "notifications":
+    elif command == "notifications":
         speak("Notifications activated.")
         main_notification()
 
-    elif user_input == "do list" or user_input == "to do list":
+    elif command in ["do_list", "to_do_list"]:
         speak("Here are today's tasks:")
         todolist.run()
         
-    elif user_input == "help":
+    elif command == "help":
         help()
 
-    elif user_input == "voice settings":
+    elif command == "voice_settings":
         main_voice()
     else:
         # Fall back to general chat response using chat_gpt
@@ -213,15 +250,10 @@ def main():
     vision_thread = None
     user_name = get_user_name()
     
-    speak(f"Hello Boss. How can I assist you today?")
+    speak(f"Hello Sir. How can I assist you today?")
     while True:
         print("Say something or type a command...")
-        user_input = input().strip()
-        
-        if user_input.startswith("/"):
-            user_input = user_input[1:]
-        else:
-            user_input = listen().lower()
+        user_input = listen().strip()
 
         if user_input != "None" and process_command(user_input):
             break
