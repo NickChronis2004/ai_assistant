@@ -5,30 +5,10 @@ import threading
 from pyzbar.pyzbar import decode
 import webbrowser
 
-def listen_for_termination():
-    recognizer = sr.Recognizer()
-    microphone = sr.Microphone()
-    while True:
-        with microphone as source:
-            recognizer.adjust_for_ambient_noise(source)
-            print("Listening for termination command...")
-            try:
-                audio = recognizer.listen(source, timeout=1)
-                command = recognizer.recognize_google(audio)
-                if "terminate current function" in command.lower():
-                    print("Termination command detected!")
-                    return True
-            except (sr.WaitTimeoutError, sr.UnknownValueError, sr.RequestError):
-                continue
-
 def video():
     cap = cv2.VideoCapture(0)
-    termination_thread = threading.Thread(target=listen_for_termination)
-    termination_thread.start()
     while True:
         ret, frame = cap.read()
-        if not ret or not termination_thread.is_alive():
-            break
         cv2.imshow('frame', frame)
         if cv2.waitKey(1) == ord('q'):
             break
@@ -38,12 +18,8 @@ def video():
 def detect_faces():
     cap = cv2.VideoCapture(0)
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-    termination_thread = threading.Thread(target=listen_for_termination)
-    termination_thread.start()
     while True:
         ret, frame = cap.read()
-        if not ret or not termination_thread.is_alive():
-            break
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = face_cascade.detectMultiScale(gray, 1.3, 5)
         for (x, y, w, h) in faces:
@@ -59,12 +35,8 @@ def detect_emotions():
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
     smile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_smile.xml')
     previous_emotion = "neutral"
-    termination_thread = threading.Thread(target=listen_for_termination)
-    termination_thread.start()
     while True:
         ret, frame = cap.read()
-        if not ret or not termination_thread.is_alive():
-            break
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         faces = face_cascade.detectMultiScale(gray, 1.3, 5)
         emotion_detected = "neutral"
@@ -91,12 +63,8 @@ def detect_emotions():
 
 def detect_colors():
     webcam = cv2.VideoCapture(0)
-    termination_thread = threading.Thread(target=listen_for_termination)
-    termination_thread.start()
     while True:
         _, imageFrame = webcam.read()
-        if not termination_thread.is_alive():
-            break
         hsvFrame = cv2.cvtColor(imageFrame, cv2.COLOR_BGR2HSV)
 
         red_lower = np.array([136, 87, 111], np.uint8)
@@ -161,8 +129,6 @@ def reader():
     # To keep track of scanned QR codes
     scanned_data = set()
     webcam = cv2.VideoCapture(0)
-    termination_thread = threading.Thread(target=listen_for_termination)
-    termination_thread.start()
     try:
         while True:
             # Read a frame from the capture device
@@ -195,7 +161,8 @@ def reader():
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    user_input = input("Enter 'face detection', 'emotion detection', 'color detection', 'video', 'reader', or 'reader': ")
+    user_input = input("Enter 'face detection', 'emotion detection', 'color detection', 'video', or 'qr reader': ")
+    print("press q to quit")
     if user_input == "face detection":
         detect_faces()
     elif user_input == "emotion detection":
@@ -204,7 +171,7 @@ if __name__ == "__main__":
         detect_colors()
     elif user_input == "video":
         video()
-    elif user_input == "reader":
+    elif user_input == "qr reader":
         reader()
     else:
         print("Invalid input. Please try again.")

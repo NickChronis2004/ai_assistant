@@ -5,11 +5,10 @@ import threading
 from pc_report import pc_report
 from chat_gpt import chat_gpt
 from image_generation import image_generation
-from vision import detect_faces, detect_emotions, detect_colors, video, listen_for_termination, reader
+from vision import detect_faces, detect_emotions, detect_colors, video, reader
 from real_time_info import get_weather
 from spotify import search_and_play_song, get_user_name
 from news import get_daily_news
-import game_mode
 from google_search import search_google
 from voices import list_voices, set_voice, main_voice
 from mail_report import open_webmail
@@ -17,6 +16,7 @@ import webbrowser
 from notification_sms import send_sms_via_vonage, create_vonage_client, schedule_sms, main_notification
 import sensetive_info
 import todolist
+from game_mode import start_game
 
 # Global flag for stopping vision thread
 stop_vision = threading.Event()
@@ -29,20 +29,22 @@ def help():
     speak("You can say the following commands:")
     commands = [
         "open spotify - to open Spotify",
-        "activate face detection - to activate face detection",
+        "face detection - to activate face detection",
         "weather report - to get the weather report",
-        "activate emotion detection - to activate emotion detection",
-        "activate color detection - to activate color detection",
-        "activate video detection - to activate video detection",
-        "activate image generation - to activate image generation",
-        "shut down the computer - to shut down the computer",
-        "give me pc report - to give a PC report",
+        "emotion detection - to activate emotion detection",
+        "color detection - to activate color detection",
+        "video detection - to activate video detection",
+        "image generation - to activate image generation",
+        "shut down - to shut down the computer",
+        "pc report - to give a PC report",
+        "available commands: first one / second one",
         "news - to get the latest news",
-        "terminate current function - to terminate the current function",
-        "activate game mode - to play tic-tac-toe",
+        "terminate - to terminate the current function",
+        "game mode - to play tic-tac-toe",
         "google search - to search for something on Google",
-        "activate qr reader - to read QR codes",
+        "qr reader - to read QR codes",
         "voice settings - to change the voice",
+        "q -to quit vision functions",
         "list voices - to list available voices",
         "activate voice id Voice_ID - to set the voice with the specified ID",
         "notifications - to send a message/notification",
@@ -51,7 +53,7 @@ def help():
         "open chrome - to open Chrome",
         "email report - to open the webmail",
         "do list - to show the todo list(show-add-check-clear-exit)",
-        "exit - bye - quit - to exit the program"
+        "exit - bye - quit - to exit the program",
         "note that you can also type commands in the format /command_name"
     ]
     for command in commands:
@@ -92,7 +94,7 @@ def pc_shut_down():
         os.system('shutdown /s /t 1')
         # os.system('sudo shutdown now')  # Uncomment this line for Unix/Linux systems
     else:
-        speak("Shutdown canceled.")
+        speak("Shut down canceled.")
 
 def process_command(user_input):
     global stop_vision
@@ -105,54 +107,59 @@ def process_command(user_input):
         return True
 
     elif user_input == "open spotify":
-        speak("Welcome to Spotify. What song would you like me to play?")
-        song_name = listen()
+        speak("Welcome to Spotify. Please type the song name or say it.")
+        song_name = input("Type the song name: ").strip()
+        if not song_name:
+            song_name = listen()
+        
         if song_name != "None":
             response = search_and_play_song(song_name)
             speak(response)
         else:
             speak("Sorry, I didn't catch that. Please try again.")
 
-    elif user_input == "activate face detection":
+    elif user_input == "face detection":
         vision_thread = vision_manager(detect_faces)
 
     elif user_input == "weather report":
         speak(get_weather())
 
-    elif user_input == "activate emotion detection":
+    elif user_input == "emotion detection":
         vision_thread = vision_manager(detect_emotions)
 
-    elif user_input == "activate color detection":
+    elif user_input == "color detection":
         vision_thread = vision_manager(detect_colors)
         speak("Color detection activated.")
 
-    elif user_input == "activate video detection":
+    elif user_input == "video detection":
         vision_thread = vision_manager(video)
         speak("Video detection activated.")
 
-    elif user_input == "activate image generation":
+    elif user_input == "image generation":
         speak("Image generation activated.")
         image_url = image_generation()
         if image_url:
             speak(f"The image has been created. You can view it here")
             webbrowser.open(image_url)
 
-    elif user_input == "shut down the computer":
+    elif user_input == "shut down":
         pc_shut_down()
 
-    elif user_input == "give me pc report":
+    elif user_input == "pc report":
         pc_report()
 
-    elif user_input == "terminate current function":
+    elif user_input == "terminate":
+        stop_vision.set()
+        if vision_thread is not None:
+            vision_thread.join()
         speak("Terminating current function.")
-        listen_for_termination()
 
     elif user_input == "news":
         get_daily_news()
 
-    elif user_input == "activate game mode":
+    elif user_input == "game mode":
         speak("Game mode activated.")
-        game_mode.run()
+        start_game() 
 
     elif user_input == "google search":
         speak("What would you like me to search for?")
@@ -161,7 +168,7 @@ def process_command(user_input):
             search_google(search_query)
             speak("Here are the results of your search:")
 
-    elif user_input == "activate qr reader":
+    elif user_input == "qr reader":
         speak("QR reader activated.")
         reader()
 
@@ -216,7 +223,7 @@ def main():
         else:
             user_input = listen().lower()
 
-        if process_command(user_input):
+        if user_input != "None" and process_command(user_input):
             break
 
 if __name__ == "__main__":
