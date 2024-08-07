@@ -2,6 +2,7 @@ import os
 import pyttsx3
 import speech_recognition as sr
 import threading
+from datetime import datetime
 from pc_report import pc_report
 from chat_gpt import chat_gpt
 from image_generation import image_generation
@@ -24,6 +25,24 @@ stop_vision = threading.Event()
 # Initialize the text-to-speech engine
 engine = pyttsx3.init()
 recognizer = sr.Recognizer()
+
+def listen_for_jarvis():
+    with sr.Microphone() as source:
+        recognizer.adjust_for_ambient_noise(source)
+        print("Listening for 'jarvis' keyword...")
+        while True:
+            audio = recognizer.listen(source)
+            try:
+                command = recognizer.recognize_google(audio).lower()
+                if "jarvis" in command or "jarvice" in command:
+                    print(f"Detected activation keyword in: '{command}'")
+                    process_command(command)
+                else:
+                    print(f"No activation keyword detected in: '{command}'")
+            except sr.UnknownValueError:
+                print("Could not understand audio")
+            except sr.RequestError as e:
+                print(f"Could not request results; {e}")
 
 # Define possible commands and their variations
 commands = {
@@ -49,6 +68,7 @@ commands = {
     "do_list": ["do list", "to do list"],
     "help": ["help"],
     "voice_settings": ["voice settings", "change voice"],
+    "what_time": ["what time is it", "what's the time", "tell me the time"],
     "exit": ["exit", "bye", "quit"]
 }
 
@@ -80,6 +100,7 @@ def help():
         "open chrome - to open Chrome",
         "email report - to open the webmail",
         "do list - to show the todo list(show-add-check-clear-exit)",
+        "what time - to tell me the time and date",
         "exit - bye - quit - to exit the program",
     ]
     for command in command_list:
@@ -134,15 +155,21 @@ def process_command(user_input):
     vision_thread = None
     
     command = classify_command(user_input)
+
+    if command == "what_time":
+        now = datetime.now()
+        day = now.strftime("%A")
+        time = now.strftime("%H:%M")
+        speak(f"Today is {day}, and the current time is {time}.")
     
-    if command in ["quit", "exit", "bye", "you can sleep now"]:
+    elif command in ["quit", "exit", "bye", "you can sleep now"]:
         stop_vision.set()
         if vision_thread is not None:
             vision_thread.join()
         return True
 
     elif command == "open_spotify":
-        speak("On it. Please type the song name or say it.")
+        speak("Oon it. Please type the song name or say it.")
         song_name = input("Type the song name: ").strip()
         if not song_name:
             song_name = listen()
@@ -232,7 +259,7 @@ def process_command(user_input):
     elif command in ["do_list", "to_do_list"]:
         speak("Here are today's tasks:")
         todolist.run()
-        
+
     elif command == "help":
         help()
 
