@@ -69,7 +69,7 @@ commands = {
     "help": ["help"],
     "voice_settings": ["voice settings", "change voice"],
     "what_time": ["what time is it", "what's the time", "tell me the time"],
-    "exit": ["exit", "bye", "quit"]
+    "exit": ["exit", "bye", "quit", "sleep now", "sleep for now"]
 }
 
 def help():
